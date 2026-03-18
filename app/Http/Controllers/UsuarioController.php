@@ -66,12 +66,10 @@ class UsuarioController extends Controller
             'errors'  => $validator->errors()
         ], 422);
     }
-    // Calcular sueldo_neto (sueldo_base + comisión si aplica)
-    // Por defecto comisión en 0
+   
     $comision = 0;
     $sueldo_neto = $request->sueldo_base + $comision;
 
-    // Generar ID autoincremental si no es auto en BD
     $ultimoEmpleado = Usuario::orderBy('id_empleado', 'desc')->first();
     $nuevoId = $ultimoEmpleado ? $ultimoEmpleado->id_empleado + 1 : 1;
 
@@ -79,17 +77,19 @@ class UsuarioController extends Controller
         'id_empleado' => $nuevoId,
         'nombre' => $request->nombre,
         'apellidoP' => $request->apellidoP,
-        'apellidoM' => $request->apellidoM ?? '', // Valor por defecto si es null
+        'apellidoM' => $request->apellidoM ?? '', 
         'telefono' => $request->telefono,
-        'turno' => $request->turno ?? 'Matutino', // Valor por defecto
+        'turno' => $request->turno ?? 'Matutino', 
         'sueldo_base' => $request->sueldo_base,
-        'comision' => 0, // Valor por defecto
+        'comision' => 0, 
         'sueldo_neto' => $sueldo_neto,
         'rol' => $request->rol,
         'correo' => $request->correo,
         'password' => Hash::make($request->password),
     ]);
-
+     $request->merge([
+    'rol' => strtolower(trim($request->rol))
+]);
      return response()->json([
             'success' => true,
             'message' => 'Usuario registrado correctamente',
@@ -180,7 +180,7 @@ private function generateNextId()
             return back()->with('error', 'Error usuario no encontrado');
 
         }
-        // Cambiar estado a inactivo
+        
         $usuario->update([
             'activo' => 0
             ]);
@@ -192,19 +192,19 @@ private function generateNextId()
     }
 
     public function login(Request $request){
-        // Validar datos
+       
         $request->validate([
             'correo' => 'required|email',
         ]);
 
-        // Intentar autenticación
+      
         $credentials = $request->only('correo', 'password');
         
-        // Buscar usuario por correo
+       
         $usuario = Usuario::where('correo', $request->correo)->first();
 
         if ($usuario) {
-            // Credenciales correctas, iniciar sesión
+            
             Auth::login($usuario, $request->remember ?? false);
             
           return redirect('/inicio');

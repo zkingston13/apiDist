@@ -69,6 +69,7 @@
 
 @section('scripts')
 <script>
+    
 let carrito = [];
 
 function aumentarCantidad(btn) {
@@ -85,7 +86,22 @@ function disminuirCantidad(btn) {
     let valor = parseInt(input.value) || 0;
     if (valor > 0) input.value = valor - 1;
 }
+function mostrarMensaje(texto, tipo = 'success') {
+    const mensaje = document.createElement('div');
+    
+    mensaje.className = `
+        fixed top-5 right-5 z-50 px-4 py-3 rounded-lg shadow-lg text-white
+        ${tipo === 'success' ? 'bg-green-600' : 'bg-red-600'}
+    `;
+    
+    mensaje.textContent = texto;
 
+    document.body.appendChild(mensaje);
+
+    setTimeout(() => {
+        mensaje.remove();
+    }, 2000);
+}
 function agregarAlCarrito(btn) {
     const card = btn.closest('.producto-card');
     const cantidad = parseInt(card.querySelector('.producto-cantidad').value);
@@ -114,6 +130,7 @@ function agregarAlCarrito(btn) {
     
     card.querySelector('.producto-cantidad').value = 0;
     actualizarCarrito();
+    mostrarMensaje('Producto agregado al carrito');
 }
 
 function actualizarCarrito() {
@@ -201,6 +218,8 @@ function registrarVenta() {
     actualizarCarrito();
     document.getElementById('vendedor_id').value = '';
 }
+
+
 
 // Filtro por categoría
 document.getElementById('filtroCategoria')?.addEventListener('change', function(e) {
