@@ -17,7 +17,7 @@ use App\Models\Compra;
     {
         $query = Productos::with('categoria');
         
-        // Aplicar filtros
+       
         if ($request->has('categoria') && !empty($request->categoria)) {
             $query->where('categoria_id', $request->categoria);
         }

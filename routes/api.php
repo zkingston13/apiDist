@@ -73,3 +73,9 @@ Route::post('/logout', [UsuarioController::class, 'logout'])->name('logout');
     Route::prefix('detalles')->group(function(){
 Route::get('/',[DetalleCompra::class,'index']);
     });
+Route::prefix('ventas')->group(function(){
+    Route::get('/', [VentasController::class,'index']);
+Route::post('/', [VentasController::class,'store']);
+Route::get('{id}', [VentasController::class,'show']);
+Route::delete('/{id}', [VentasController::class,'destroy']);
+});
