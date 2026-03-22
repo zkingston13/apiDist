@@ -8,6 +8,8 @@ use App\Http\Controllers\ArticulosController;
 use App\Http\Controllers\CompraController;
 use App\Http\Controllers\ProveedoresController;
 use App\Http\Controllers\VentasController;
+use App\Http\Controllers\ReporteController;
+use App\Http\Controllers\DetalleCompra;
 
 /*
 |--------------------------------------------------------------------------
@@ -59,3 +61,15 @@ Route::post('/logout', [UsuarioController::class, 'logout'])->name('logout');
  Route::delete('/{id_usuario}',[UsuarioController::class,'destroy']);
     });
    
+    Route::prefix('compra')->group(function(){
+     Route::get('/',[ CompraController::class,'index']);
+     Route::post('/',[CompraController::class,'store']);
+     Route::delete('/{id_compra}',[CompraController::class,'destroy']);
+    });
+
+    Route::prefix('reporte')->group(function(){
+      Route::get('/',[ReporteController::class,'index']);
+    });
+    Route::prefix('detalles')->group(function(){
+Route::get('/',[DetalleCompra::class,'index']);
+    });

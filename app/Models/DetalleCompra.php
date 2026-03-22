@@ -4,6 +4,8 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use App\Models\Compra;
+use App\Models\Productos;
 
 class DetalleCompra extends Model
 {
@@ -23,6 +25,6 @@ class DetalleCompra extends Model
     } 
    public function producto()
     {
-        return $this->belongsTo(Producto::class, 'id_producto');
+        return $this->belongsTo(Productos::class, 'id_producto');
     } 
 }
