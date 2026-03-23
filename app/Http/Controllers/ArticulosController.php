@@ -10,11 +10,10 @@ use App\Models\Categoria;
 use App\Models\Proveedor;
 use App\Models\DetalleCompra;
 use App\Models\Compra;
-
+use Illminate\Support\Facades\Storage;
 
     class ArticulosController extends Controller{
-    public function index(Request $request)
-    {
+    public function index(Request $request){
         $query = Productos::with('categoria');
         
        
@@ -56,9 +55,6 @@ use App\Models\Compra;
         'existencia' => 'required|integer|min:1', // Cambiado a min:1 para compra inicial
         'categoria_id' => 'required|exists:categoria,id_categoria',
         'id_proveedor' => 'required|exists:proveedor,id_proveedor', // Agregar validación
-        'img' => 'nullable|image|max:2048', // 2MB max
-        'img1' => 'nullable|image|max:2048',
-        'img2' => 'nullable|image|max:2048'
     ]);
 
     if ($validator->fails()) {
@@ -82,33 +78,39 @@ use App\Models\Compra;
             'img2' => '/storage/producto/producto_default.jpg'
         ]);
 
-        // Procesar imágenes
-        $ruta = 'imagenes/productos';
         
         if($request->hasFile('img')){
             $img = $request->file('img');
-            $nombre = 'productos_' . $producto->id_producto . '_img1.' . $img->extension();
-            $img->storeAs($ruta, $nombre, 'public');
-            $producto->img = '/storage/' . $ruta . '/' . $nombre;
-            $producto->save();
-        }
-        
-        if($request->hasFile('img1')){
-            $img1 = $request->file('img1');
-            $nombre = 'productos_' . $producto->id_producto . '_img2.' . $img1->extension();
-            $img1->storeAs($ruta, $nombre, 'public');
-            $producto->img1 = '/storage/' . $ruta . '/' . $nombre;
-            $producto->save();
-        }
-        
-        if($request->hasFile('img2')){
-            $img2 = $request->file('img2');
-            $nombre = 'productos_' . $producto->id_producto . '_img3.' . $img2->extension();
-            $img2->storeAs($ruta, $nombre, 'public');
-            $producto->img2 = '/storage/' . $ruta . '/' . $nombre;
+            $route = Storage::disk('s3')->put('articulos',$img);
+            $url = Storage::disk('s3')->url($route);
+            $producto->img = $url;
             $producto->save();
         }
 
+        if($request->hasFile('img1')){
+            $img = $request->file('img1');
+            
+           
+            $route = Storage::disk('s3')->put('articulos',$img);
+
+            $url = Storage::disk('s3')->url($route);
+            $producto->img1 = $url;
+            $producto->save();
+        }
+
+        if($request->hasFile('img2')){
+            $img = $request->file('img2');
+            
+            $nombre = 'productos_' . $producto->id_producto . '_img3.' . $img->extension();
+           
+            $route = Storage::disk('s3')->put('articulos',$img);
+
+            $url = Storage::disk('s3')->url($route);
+            $producto->img2 = $url;
+            $producto->save();
+        }
+        
+        
         $compra = Compra::create([
             'id_proveedor' => $request->id_proveedor,
             'fecha' => now()
