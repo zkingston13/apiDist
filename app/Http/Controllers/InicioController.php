@@ -63,5 +63,53 @@ class InicioController extends Controller
             'comisionesPendientes' => $comisionesPendientes
         ],200);
     }
-    //Falta conexion
-}
+    
+    public function indexemple(){
+        
+        $totalProductos = DB::table('productos')->count();
+
+       
+        $ventasHoy = DB::table('venta')
+            ->join('detalle_venta','venta.id_venta','=','detalle_venta.id_venta')
+            ->whereDate('venta.fecha', Carbon::today())
+            ->sum('detalle_venta.subtotal');
+
+     
+     
+        $ventasMes = DB::table('venta')
+            ->join('detalle_venta','venta.id_venta','=','detalle_venta.id_venta')
+            ->select(
+                DB::raw('MONTH(venta.fecha) as mes'),
+                DB::raw('SUM(detalle_venta.subtotal) as total')
+            )
+            ->groupBy('mes')
+            ->orderBy('mes')
+            ->get();
+
+
+        
+        $productosVendidos = DB::table('detalle_venta')
+            ->join('productos','detalle_venta.id_productos','=','productos.id_producto')
+            ->select(
+                'productos.nombre_producto',
+                DB::raw('SUM(detalle_venta.cantidad) as total')
+            )
+            ->groupBy('productos.nombre_producto')
+            ->orderByDesc('total')
+            ->limit(4)
+            ->get();
+
+     
+        
+
+     return response()->json([
+            'success' => true,
+            'totalProductos' => $totalProductos,
+            'ventasHoy' => $ventasHoy,
+            'ventasMes' => $ventasMes,
+            'productosVendidos' => $productosVendidos,
+           
+        ],200);
+    }
+    
+    }

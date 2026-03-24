@@ -14,38 +14,44 @@ use Illminate\Support\Facades\Storage;
 
     class ArticulosController extends Controller{
     public function index(Request $request){
-        $query = Productos::with('categoria');
-        
-       
-        if ($request->has('categoria') && !empty($request->categoria)) {
-            $query->where('categoria_id', $request->categoria);
-        }
-        
-        if ($request->has('estado') && !empty($request->estado)) {
-            switch ($request->estado) {
-                case 'stock':
-                    $query->where('existencia', '>', 10);
-                    break;
-                case 'low':
-                    $query->whereBetween('existencia', [1, 10]);
-                    break;
-                case 'out':
-                    $query->where('existencia', 0);
-                    break;
-            }
-        }
-        
-        // Paginación: 10 productos por página
-        $productos = $query->paginate(10);
-        
-        // Mantener los filtros en los enlaces de paginación
-        $productos->appends($request->query());
-        
-        $categorias = Categoria::all();
-        $proveedores = Proveedor::all();
-          return response()->json(['resultado'=>true, 'productos' =>$productos,'categorias' => $categorias,'proveedores'=> $proveedores], 200);
-       
+
+    $query = Productos::with('categoria');
+
+    if ($request->has('categoria') && !empty($request->categoria)) {
+        $query->where('categoria_id', $request->categoria);
     }
+
+    if ($request->has('estado') && !empty($request->estado)) {
+        switch ($request->estado) {
+            case 'stock':
+                $query->where('existencia', '>', 10);
+                break;
+            case 'low':
+                $query->whereBetween('existencia', [1, 10]);
+                break;
+            case 'out':
+                $query->where('existencia', 0);
+                break;
+        }
+    }
+
+    // 👇 SI PIDEN TODOS
+    if($request->has('all')){
+        $productos = $query->get();
+    }else{
+        $productos = $query->paginate(10);
+    }
+
+    $categorias = Categoria::all();
+    $proveedores = Proveedor::all();
+
+    return response()->json([
+        'resultado'=>true,
+        'productos'=>$productos,
+        'categorias'=>$categorias,
+        'proveedores'=>$proveedores
+    ],200);
+}
 
    public function store(Request $request){
 

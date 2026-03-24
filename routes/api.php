@@ -84,3 +84,4 @@ Route::delete('/{id}', [VentasController::class,'destroy']);
 });
 
 Route::get('/inicio',[InicioController::class,'index']);
+Route::get('/inicio_empleado',[InicioController::class,'indexemple']);
