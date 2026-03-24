@@ -10,6 +10,7 @@ use App\Http\Controllers\ProveedoresController;
 use App\Http\Controllers\VentasController;
 use App\Http\Controllers\ReporteController;
 use App\Http\Controllers\DetalleCompra;
+use App\Http\Controllers\InicioController;
 
 /*
 |--------------------------------------------------------------------------
@@ -26,19 +27,21 @@ Route::middleware('auth:sanctum')->get('/user', function (Request $request) {
     return $request->user();
 });
 
-Route::get('/auth/google', [GoogleController::class, 'redirect'])->name('google.login');
+Route::get('/auth/google', [GoogleController::class, 'redirect']);
 Route::get('/auth/google/callback', [GoogleController::class, 'callback']);
 
 // Login
 Route::get('/login', [UsuarioController::class, 'showLoginForm'])->name('login');
-Route::post('/login', [UsuarioController::class, 'login'])->name('login.post');
-Route::post('/logout', [UsuarioController::class, 'logout'])->name('logout');
+Route::post('/login', [UsuarioController::class, 'login']);
+Route::post('/logout', [UsuarioController::class, 'logout']);
 
 
 
 
 
-    Route::view('/inicio', 'inicio');
+
+
+  
     Route::resource('productos', ArticulosController::class);
 
     Route::prefix('articulos')->group(function(){
@@ -79,3 +82,5 @@ Route::post('/', [VentasController::class,'store']);
 Route::get('{id}', [VentasController::class,'show']);
 Route::delete('/{id}', [VentasController::class,'destroy']);
 });
+
+Route::get('/inicio',[InicioController::class,'index']);

@@ -174,49 +174,83 @@ private function generateNextId()
     ],200);
     }
 
-    public function destroy($id){
-        $usuario = Usuario::find($id);
-        if (!$usuario) {
-            return back()->with('error', 'Error usuario no encontrado');
+   public function destroy($id_usuario)
+{
 
-        }
-        
-        $usuario->update([
-            'activo' => 0
-            ]);
-        return redirect()->back()->with('success', 'usuario eliminado');
+    $usuario = Usuario::find($id_usuario);
+
+    if(!$usuario){
+        return response()->json([
+            'success'=>false,
+            'message'=>'Usuario no encontrado'
+        ],404);
     }
 
+    $usuario->update([
+        'activo'=>0
+    ]);
+
+    return response()->json([
+        'success'=>true,
+        'message'=>'Usuario eliminado'
+    ]);
+}
     public function showLoginForm(){
         return view('layouts.login'); 
     }
 
     public function login(Request $request){
        
-        $request->validate([
-            'correo' => 'required|email',
-        ]);
+         $request->validate([
+        'correo' => 'required|email',
+        'password' => 'required|min:6'
+    ]);
 
-      
-        $credentials = $request->only('correo', 'password');
-        
-       
-        $usuario = Usuario::where('correo', $request->correo)->first();
+    $usuario = Usuario::where('correo', $request->correo)->first();
 
-        if ($usuario) {
-            
-            Auth::login($usuario, $request->remember ?? false);
-            
-          return redirect('/inicio');
-        }
-        
+    if(!$usuario){
+        return response()->json([
+            'success' => false,
+            'message' => 'Credenciales incorrectas'
+        ],401);
     }
 
-    public function logout(Request $request){
-        Auth::logout();
-        $request->session()->invalidate();
-        $request->session()->regenerateToken();
-        
-        return redirect('/');
+    if(!Hash::check($request->password,$usuario->password)){
+        return response()->json([
+            'success'=>false,
+            'message'=>'Credenciales incorrectas'
+        ],401);
     }
+
+    if($usuario->activo == 0){
+        return response()->json([
+            'success'=>false,
+            'message'=>'Tu cuenta está desactivada'
+        ],403);
+    }
+
+    if($usuario->rol === 'vendedor'){
+        return response()->json([
+            'success'=>false,
+            'message'=>'No tienes acceso al sistema'
+        ],403);
+    }
+
+    return response()->json([
+        'success'=>true,
+        'usuario'=>$usuario
+    ]);
+}
+        
+    
+
+    public function logout()
+{
+    Auth::logout();
+
+    return response()->json([
+        'success'=>true,
+        'message'=>'Sesión cerrada'
+    ]);
+}
 }
