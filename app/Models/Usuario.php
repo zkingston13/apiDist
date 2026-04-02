@@ -33,11 +33,7 @@ class Usuario extends Authenticatable
         'password',
     ];
 
-    // Indicar a Laravel que el campo de autenticación es 'correo'
-    public function getAuthIdentifierName()
-    {
-        return 'correo';
-    }
+    
     public function empleado()
     {
         return $this->hasOne(Empleado::class, 'id_usuario');

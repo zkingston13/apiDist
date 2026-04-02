@@ -12,8 +12,7 @@ use App\Models\DetalleCompra;
 class CompraController extends Controller
 {
      public function index(){
-         $compras = Compra::with('proveedor', 'detalle_compra')->get();
-         
+         $compras = Compra::with('proveedor', 'detalle_compra.producto')->get();
         $proveedores = Proveedor::all();
         $productos = Productos::all();
         return response()->json([

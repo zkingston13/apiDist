@@ -106,25 +106,21 @@ private function generateNextId()
     return $lastUser ? $lastUser->id_empleado + 1 : 1;
 }
 
-    public function show($id_usuario){
-          $validator = Validator::make(
-              ['id_empleado'=>$id_usuario],
-              ['id_empleado'=>'required|integer|min:1|exists:usuario,id_empleado']
-        );
+     public function show($id){
 
-        if($validator->fails()){
-             return response()->json(['resultado'=>false, 'datos' =>null,'errors'=>$validator->errors()], 422);
+        $usuario = Usuario::find($id);
 
-        }
-        
-        $usuario = Usuario::find($id_usuario);
-        
-        if (!$usuario) {
-          return response()->json(['resultado'=>false, 'datos' =>null,'errors'=>$validator->errors()], 400);
-
+        if(!$usuario){
+            return response()->json([
+                'resultado'=>false,
+                'mensaje'=>'Usuario no encontrado'
+            ],404);
         }
 
-        return response()->json(['resultado'=>true, 'datos' =>$usuario], 200);
+        return response()->json([
+            'resultado'=>true,
+            'datos'=>$usuario
+        ]);
     }
 
     public function update(Request $request, $id_usuario){
@@ -253,4 +249,133 @@ private function generateNextId()
         'message'=>'Sesión cerrada'
     ]);
 }
+
+public function ventasVendedor($id_usuario)
+{
+    $ventas = DB::table('venta as v')
+        ->leftJoin('detalle_venta as dv','v.id_venta','=','dv.id_venta')
+        ->select(
+            'v.id_venta',
+            'v.fecha',
+            DB::raw('SUM(dv.subtotal) as subtotal'),
+            DB::raw('SUM(dv.total) as total')
+        )
+        ->where('v.id_vendedor',$id_usuario)
+        ->groupBy('v.id_venta','v.fecha')
+        ->get();
+
+    $vendedor = Usuario::find($id_usuario);
+
+    return response()->json([
+        'success'=>true,
+        'ventas'=>$ventas,
+        'vendedor'=>$vendedor
+    ]);
+}
+   public function loginVendedor(Request $request){
+       
+         $request->validate([
+        'correo' => 'required|email',
+        'password' => 'required|min:6'
+    ]);
+
+    $usuario = Usuario::where('correo', $request->correo)->first();
+
+    if(!$usuario){
+        return response()->json([
+            'success' => false,
+            'message' => 'Credenciales incorrectas'
+        ],401);
+    }
+
+    if(!Hash::check($request->password,$usuario->password)){
+        return response()->json([
+            'success'=>false,
+            'message'=>'Credenciales incorrectas'
+        ],401);
+    }
+
+    if($usuario->activo == 0){
+        return response()->json([
+            'success'=>false,
+            'message'=>'Tu cuenta está desactivada'
+        ],403);
+    }
+
+    if($usuario->rol === 'administrador'){
+        return response()->json([
+            'success'=>false,
+            'message'=>'No tienes acceso al sistema'
+        ],403);
+    }
+
+    return response()->json([
+        'success'=>true,
+        'usuario'=>$usuario
+    ]);
+}
+
+public function updatePerfil(Request $request, $id_usuario)
+{
+    $usuario = Usuario::find($id_usuario);
+
+    if (!$usuario) {
+        return response()->json([
+            'success' => false,
+            'message' => 'Usuario no encontrado'
+        ], 404);
+    }
+
+    $request->validate([
+        'nombre' => 'required|string|max:30',
+        'correo' => 'required|email|max:255|unique:usuario,correo,' . $id_usuario . ',id_empleado'
+    ]);
+
+    $usuario->update([
+        'nombre' => $request->nombre,
+        'correo' => $request->correo
+    ]);
+
+    return response()->json([
+        'success' => true,
+        'message' => 'Perfil actualizado correctamente',
+        'usuario' => $usuario
+    ], 200);
+}
+
+public function updatePassword(Request $request, $id_usuario)
+{
+    $usuario = Usuario::find($id_usuario);
+
+    if (!$usuario) {
+        return response()->json([
+            'success' => false,
+            'message' => 'Usuario no encontrado'
+        ], 404);
+    }
+
+   
+    $request->validate([
+        'new_password' => 'required|min:6|confirmed'
+    ]);
+    if ($request->new_password !== $request->new_password_confirmation) {
+        return response()->json([
+            'success' => false,
+            'message' => 'Las contraseñas no coinciden'
+        ], 422);
+    }
+      $request->validate([
+        'new_password' => 'required|min:6|same:new_password_confirmation',
+        'new_password_confirmation' => 'required|min:6'
+    ]);
+
+    $usuario->password = Hash::make($request->new_password);
+    $usuario->save();
+
+    return response()->json([
+        'success' => true,
+        'message' => 'Contraseña actualizada correctamente'
+    ], 200);
+}
+
 }

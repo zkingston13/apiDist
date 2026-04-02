@@ -28,11 +28,15 @@ Route::middleware('auth:sanctum')->get('/user', function (Request $request) {
 });
 
 Route::get('/auth/google', [GoogleController::class, 'redirect']);
+Route::get('/auth/google/empl', [GoogleController::class, 'redirectempl']);
 Route::get('/auth/google/callback', [GoogleController::class, 'callback']);
+Route::get('/auth/google/callback/empl', [GoogleController::class, 'callbackempl']);
 
 // Login
 Route::get('/login', [UsuarioController::class, 'showLoginForm'])->name('login');
+
 Route::post('/login', [UsuarioController::class, 'login']);
+Route::post('/login-vendedor', [UsuarioController::class, 'loginVendedor']);
 Route::post('/logout', [UsuarioController::class, 'logout']);
 
 
@@ -85,3 +89,7 @@ Route::delete('/{id}', [VentasController::class,'destroy']);
 
 Route::get('/inicio',[InicioController::class,'index']);
 Route::get('/inicio_empleado',[InicioController::class,'indexemple']);
+Route::get('/vendedores/{id_usuario}/ventas', [UsuarioController::class,'ventasVendedor']);
+
+ Route::put('/perfil/update/{id}', [UsuarioController::class, 'updatePerfil']);
+ Route::put('/perfil/password/{id}', [UsuarioController::class, 'updatePassword']);

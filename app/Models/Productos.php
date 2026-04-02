@@ -34,11 +34,10 @@ class Productos extends Model
         return $this->belongsTo(Categoria::class, 'categoria_id', 'id_categoria');
     }
 
-    public function compras()
+   public function detalle_compra()
     {
-        return $this->hasMany(Compra::class, 'id_producto', 'id_producto');
+        return $this->hasMany(DetalleCompra::class, 'id_producto', 'id_producto');
     }
-
     public function ventas()
     {
         return $this->hasMany(Ventas::class, 'id_producto', 'id_producto');

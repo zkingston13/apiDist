@@ -12,7 +12,10 @@ class GoogleController extends Controller
 
 public function redirect()
 {
-    return Socialite::driver('google')->stateless()->redirect();
+    return Socialite::driver('google')
+        ->with(['state' => 'admin'])
+        ->stateless()
+        ->redirect();
 }
 
 public function callback()
@@ -40,6 +43,38 @@ public function callback()
     }
 
     return redirect('http://127.0.0.1:8001/inicio')
+        ->with('sucess','Usuario encontrado');
+}
+
+public function redirectempl()
+{
+    return Socialite::driver('google')->stateless()->redirect();
+}
+public function callbackempl()
+{
+
+    try {
+        $googleUser = Socialite::driver('google')->stateless()->user();
+    } catch (\Exception $e) {
+        return response()->json([
+            'success'=>false,
+            'message'=>'Error al autenticar con Google'
+        ],500);
+    }
+
+    $user = Usuario::where('correo',$googleUser->email)->first();
+
+    if(!$user){
+     return redirect('http://127.0.0.1:8002/login')
+        ->with('google_error','Tu correo no está registrado');
+    }
+
+    if($user->activo == 0){
+      return redirect('http://127.0.0.1:8002/login')
+        ->with('google_error','Usuario desactivado');
+    }
+
+    return redirect('http://127.0.0.1:8002/inicio')
         ->with('sucess','Usuario encontrado');
 }
 

@@ -29,7 +29,7 @@ public function index()
     ],200);
 }
 
-   public function store(Request $request)
+public function store(Request $request)
 {
     try {
 
@@ -42,24 +42,41 @@ public function index()
 
         foreach ($request->productos as $prod) {
 
-            $subtotal = $prod['cantidad'] * $prod['precio'];
+    $producto = Productos::find($prod['id']);
 
-            DetalleVenta::create([
-                'id_venta' => $venta->id_venta,
-                'id_productos' => $prod['id'],
-                'cantidad' => $prod['cantidad'],
-                'precio_venta' => $prod['precio'],
-                'subtotal' => $subtotal,
-                'total' => $subtotal
-            ]);
-        }
+    if(!$producto){
+        throw new \Exception("Producto no encontrado");
+    }
+
+    if($producto->existencia < $prod['cantidad']){
+        throw new \Exception("Stock insuficiente para ".$producto->nombre_producto);
+    }
+
+    $subtotal = $prod['cantidad'] * $prod['precio'];
+    $iva = $subtotal * 0.16;
+    $total = $subtotal + $iva;
+
+    DetalleVenta::create([
+        'id_venta' => $venta->id_venta,
+        'id_productos' => $prod['id'],
+        'cantidad' => $prod['cantidad'],
+        'precio_venta' => $prod['precio'],
+        'subtotal' => $subtotal,
+        'total' => $total
+    ]);
+
+   
+    $producto->existencia -= $prod['cantidad'];
+    $producto->save();
+}
 
         DB::commit();
 
-        return response()->json([
-            'success' => true,
-            'message' => 'Venta registrada'
-        ]);
+      return response()->json([
+    'success' => true,
+    'message' => 'Venta registrada correctamente',
+    'venta_id' => $venta->id_venta
+],200);
 
     } catch (\Exception $e) {
 
@@ -68,13 +85,12 @@ public function index()
         return response()->json([
             'success' => false,
             'error' => $e->getMessage()
-        ]);
+        ],500);
     }
 }
-
     public function show($id)
     {
-        $venta = Ventas::with(['vendedor','detalle'])->find($id);
+       $venta = Ventas::with(['vendedor','detalles.producto'])->find($id);
 
         if(!$venta){
             return response()->json([
