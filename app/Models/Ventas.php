@@ -23,4 +23,5 @@ class Ventas extends Model
     public function vendedor() {
         return $this->belongsTo(Usuario::class, 'id_vendedor', 'id_empleado');
     }
+
 }
