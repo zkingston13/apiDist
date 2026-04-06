@@ -10,7 +10,8 @@ use App\Models\Categoria;
 use App\Models\Proveedor;
 use App\Models\DetalleCompra;
 use App\Models\Compra;
-use Illminate\Support\Facades\Storage;
+use Illuminate\Support\Facades\Storage;
+use Illuminate\Support\Str;
 
     class ArticulosController extends Controller{
     public function index(Request $request){
@@ -84,39 +85,76 @@ use Illminate\Support\Facades\Storage;
             'img2' => '/storage/producto/producto_default.jpg'
         ]);
 
-        
-        if($request->hasFile('img')){
-            $img = $request->file('img');
-            $route = Storage::disk('s3')->put('articulos',$img);
-            $url = Storage::disk('s3')->url($route);
-            $producto->img = $url;
-            $producto->save();
-        }
 
-        if($request->hasFile('img1')){
-            $img = $request->file('img1');
+
+
+           if ($request->hasFile('img')) {
+            $archivo = $request->file('img');
+            $nombreArchivo = 'producto_' . $producto->id_producto . '_img_' . time() . '.' . $archivo->getClientOriginalExtension();
+            $ruta = 'articulos/' . $nombreArchivo;
             
-           
-            $route = Storage::disk('s3')->put('articulos',$img);
-
-            $url = Storage::disk('s3')->url($route);
-            $producto->img1 = $url;
-            $producto->save();
-        }
-
-        if($request->hasFile('img2')){
-            $img = $request->file('img2');
+            // Leer el contenido del archivo
+            $contenido = file_get_contents($archivo->getRealPath());
             
-            $nombre = 'productos_' . $producto->id_producto . '_img3.' . $img->extension();
-           
-            $route = Storage::disk('s3')->put('articulos',$img);
-
-            $url = Storage::disk('s3')->url($route);
-            $producto->img2 = $url;
-            $producto->save();
+            // Subir a S3
+            $subido = Storage::disk('s3')->put($ruta, $contenido, 'public');
+            
+            if ($subido) {
+                $producto->img = Storage::disk('s3')->url($ruta);
+                $producto->save();
+                
+                // Opcional: Verificar que se guardó
+                \Log::info('Imagen subida a S3: ' . $producto->img);
+            } else {
+                \Log::error('Error al subir imagen a S3');
+            }
         }
-        
-        
+
+         if ($request->hasFile('img1')) {
+            $archivo = $request->file('img1');
+            $nombreArchivo = 'producto_' . $producto->id_producto . '_img1_' . time() . '.' . $archivo->getClientOriginalExtension();
+            $ruta = 'articulos/' . $nombreArchivo;
+            
+            // Leer el contenido del archivo
+            $contenido = file_get_contents($archivo->getRealPath());
+            
+            // Subir a S3
+            $subido = Storage::disk('s3')->put($ruta, $contenido, 'public');
+            
+            if ($subido) {
+                $producto->img1 = Storage::disk('s3')->url($ruta);
+                $producto->save();
+                
+                // Opcional: Verificar que se guardó
+                \Log::info('Imagen subida a S3: ' . $producto->img1);
+            } else {
+                \Log::error('Error al subir imagen a S3');
+            }
+        }
+
+         if ($request->hasFile('img2')) {
+            $archivo = $request->file('img2');
+            $nombreArchivo = 'producto_' . $producto->id_producto . '_img2_' . time() . '.' . $archivo->getClientOriginalExtension();
+            $ruta = 'articulos/' . $nombreArchivo;
+            
+            // Leer el contenido del archivo
+            $contenido = file_get_contents($archivo->getRealPath());
+            
+            // Subir a S3
+            $subido = Storage::disk('s3')->put($ruta, $contenido, 'public');
+            
+            if ($subido) {
+                $producto->img2 = Storage::disk('s3')->url($ruta);
+                $producto->save();
+                
+                // Opcional: Verificar que se guardó
+                \Log::info('Imagen subida a S3: ' . $producto->img2);
+            } else {
+                \Log::error('Error al subir imagen a S3');
+            }
+        }
+
+
         $compra = Compra::create([
             'id_proveedor' => $request->id_proveedor,
             'fecha' => now()
@@ -153,7 +191,7 @@ use Illminate\Support\Facades\Storage;
     }
 
     public function show($id){
-         
+
         $validator = Validator::make(
               ['id_producto'=>$id],
               ['id_producto'=>'required|integer|min:1|exists:productos,id_producto']
@@ -166,14 +204,14 @@ use Illminate\Support\Facades\Storage;
         $productos = Productos::find($id);
         $categorias = Categoria::all();
         $proveedores = Proveedor::all();
-        
+
         if (!$productos) {
               return response()->json(['resultado'=>true, 'datos' =>$productos,$categorias,$proveedores], 404);
         }
 
           return response()->json(['resultado'=>true, 'datos' =>$productos,$categorias,$proveedores], 200);
     }
-    
+
 
    public function update(Request $request,$id_producto){
 
@@ -205,28 +243,69 @@ use Illminate\Support\Facades\Storage;
         ],400);
     }
 
-    $ruta = 'imagenes/productos';
 
-    if($request->hasFile('img')){
-        $img = $request->file('img');
-        $nombre = 'productos_'.$producto->id_producto.'_img1.'.$img->extension();
-        $img->storeAs($ruta,$nombre,'public');
-        $producto->img = '/storage/'.$ruta.'/'.$nombre;
-    }
+    // Función para eliminar imagen vieja de S3
+        $eliminarImagenS3 = function($url) {
+            if ($url && !str_contains($url, 'producto_default.jpg')) {
+                // Extraer la ruta del archivo de la URL
+                $path = parse_url($url, PHP_URL_PATH);
+                $path = ltrim($path, '/');
+                
+                if (Storage::disk('s3')->exists($path)) {
+                    Storage::disk('s3')->delete($path);
+                    \Log::info('Imagen eliminada de S3: ' . $path);
+                }
+            }
+        };
+        
+        // Función para subir nueva imagen a S3
+        $subirImagenS3 = function($file, $productoId, $tipo) {
+            $extension = $file->getClientOriginalExtension();
+            $nombreArchivo = 'producto_' . $productoId . '_' . $tipo . '_' . time() . '_' . uniqid() . '.' . $extension;
+            $ruta = 'articulos/' . $nombreArchivo;
+            
+            $contenido = file_get_contents($file->getRealPath());
+            $subido = Storage::disk('s3')->put($ruta, $contenido, 'public');
+            
+            if ($subido) {
+                return Storage::disk('s3')->url($ruta);
+            }
+            
+            return null;
+        };
+        
+        // Actualizar imagen principal
+        if ($request->hasFile('img')) {
+            // Eliminar imagen vieja
+            $eliminarImagenS3($producto->img);
+            
+            // Subir nueva imagen
+            $nuevaUrl = $subirImagenS3($request->file('img'), $producto->id_producto, 'img');
+            if ($nuevaUrl) {
+                $producto->img = $nuevaUrl;
+            }
+        }
+        
+        // Actualizar imagen 1
+        if ($request->hasFile('img1')) {
+            $eliminarImagenS3($producto->img1);
+            
+            $nuevaUrl = $subirImagenS3($request->file('img1'), $producto->id_producto, 'img1');
+            if ($nuevaUrl) {
+                $producto->img1 = $nuevaUrl;
+            }
+        }
+        
+        // Actualizar imagen 2
+        if ($request->hasFile('img2')) {
+            $eliminarImagenS3($producto->img2);
+            
+            $nuevaUrl = $subirImagenS3($request->file('img2'), $producto->id_producto, 'img2');
+            if ($nuevaUrl) {
+                $producto->img2 = $nuevaUrl;
+            }
+        }
 
-    if($request->hasFile('img1')){
-        $img1 = $request->file('img1');
-        $nombre = 'productos_'.$producto->id_producto.'_img2.'.$img1->extension();
-        $img1->storeAs($ruta,$nombre,'public');
-        $producto->img1 = '/storage/'.$ruta.'/'.$nombre;
-    }
-
-    if($request->hasFile('img2')){
-        $img2 = $request->file('img2');
-        $nombre = 'productos_'.$producto->id_producto.'_img3.'.$img2->extension();
-        $img2->storeAs($ruta,$nombre,'public');
-        $producto->img2 = '/storage/'.$ruta.'/'.$nombre;
-    }
 
     $producto->nombre_producto = $request->nombre_producto ?? $producto->nombre_producto;
     $producto->precio = $request->precio ?? $producto->precio;
@@ -247,17 +326,34 @@ use Illminate\Support\Facades\Storage;
               ['id_producto'=>$id_producto],
               ['id_producto'=>'required|integer|min:1|exists:productos,id_producto']
         );
- if ($validator->fails()) {
+         if ($validator->fails()) {
           return response()->json(['resultado'=>false, 'datos' => null,'errors' => $validator->errors()
-    ],422);
- }
+        ],422);
+         }
+
         $producto = Productos::find($id_producto);
+
         if (!$producto) {
           return response()->json(['resultado'=>false, 'datos' => null,'errors' => $validator->errors()
-    ],400);
+        ],400);
 
         }
-      
+
+         $deleteImageFromS3 = function($url) {
+            if ($url && !str_contains($url, 'producto_default.jpg')) {
+                $path = parse_url($url, PHP_URL_PATH);
+                $path = ltrim($path, '/');
+
+                if (Storage::disk('s3')->exists($path)) {
+                    Storage::disk('s3')->delete($path);
+                }
+            }
+        };
+
+        $deleteImageFromS3($producto->img);
+        $deleteImageFromS3($producto->img1);
+        $deleteImageFromS3($producto->img2);
+
         $producto->update([
             'activo' => 0
             ]);

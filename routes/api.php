@@ -39,20 +39,13 @@ Route::post('/login', [UsuarioController::class, 'login']);
 Route::post('/login-vendedor', [UsuarioController::class, 'loginVendedor']);
 Route::post('/logout', [UsuarioController::class, 'logout']);
 
-
-
-
-
-
-
-  
-    Route::resource('productos', ArticulosController::class);
+Route::resource('productos', ArticulosController::class);
 
     Route::prefix('articulos')->group(function(){
        Route::get('/',[ArticulosController::class,'index']);
        Route::get('/{id_producto}',[ArticulosController::class,'show']);
        Route::put('/{id_producto}',[ArticulosController::class,'update']);
-       Route::post('/',[ArticulosController::class,'store']);
+       Route::post('/store',[ArticulosController::class,'store']);
        Route::delete('/{id_producto}',[ArticulosController::class,'destroy']);
     });
 
@@ -61,13 +54,13 @@ Route::post('/logout', [UsuarioController::class, 'logout']);
    
 
     Route::prefix('vendedores')->group(function(){
- Route::get('/',[ UsuarioController::class,'index']);
- Route::get('/{id_usuario}',[UsuarioController::class,'show']);
- Route::post('/',[UsuarioController::class,'store']);
- Route::put('/{id_usuario}',[UsuarioController::class,'update']);
- Route::delete('/{id_usuario}',[UsuarioController::class,'destroy']);
+    Route::get('/',[ UsuarioController::class,'index']);
+    Route::get('/{id_usuario}',[UsuarioController::class,'show']);
+    Route::post('/',[UsuarioController::class,'store']);
+    Route::put('/{id_usuario}',[UsuarioController::class,'update']);
+    Route::delete('/{id_usuario}',[UsuarioController::class,'destroy']);
     });
-   
+    
     Route::prefix('compra')->group(function(){
      Route::get('/',[ CompraController::class,'index']);
      Route::post('/',[CompraController::class,'store']);
