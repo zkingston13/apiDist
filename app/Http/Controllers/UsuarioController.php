@@ -191,9 +191,7 @@ private function generateNextId()
         'message'=>'Usuario eliminado'
     ]);
 }
-    public function showLoginForm(){
-        return view('layouts.login'); 
-    }
+  
 
     public function login(Request $request){
        
